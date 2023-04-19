@@ -52,6 +52,95 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Ori
     ctx = reactContext;
   }
 
+  private void createListenersIfNonExists() {
+    if (mOrientationListener != null) {
+      return;
+    }
+    
+    mOrientationListener = new OrientationEventListener(reactContext, SensorManager.SENSOR_DELAY_UI) {
+
+      @Override
+      public void onOrientationChanged(int orientation) {
+
+        FLog.d(ReactConstants.TAG,"DeviceOrientation changed to " + orientation);
+
+        String deviceOrientationValue = lastDeviceOrientationValue;
+
+
+        if (orientation == -1) {
+          deviceOrientationValue = "UNKNOWN";
+        } else if (orientation > 355 || orientation < 5) {
+          deviceOrientationValue = "PORTRAIT";
+        } else if (orientation > 85 && orientation < 95) {
+          deviceOrientationValue = "LANDSCAPE-RIGHT";
+        } else if (orientation > 175 && orientation < 185) {
+          deviceOrientationValue = "PORTRAIT-UPSIDEDOWN";
+        } else if (orientation > 265 && orientation < 275) {
+          deviceOrientationValue = "LANDSCAPE-LEFT";
+        }
+
+        if (!lastDeviceOrientationValue.equals(deviceOrientationValue)) {
+
+          lastDeviceOrientationValue = deviceOrientationValue;
+
+          WritableMap params = Arguments.createMap();
+          params.putString("deviceOrientation", deviceOrientationValue);
+          if (ctx.hasActiveCatalystInstance()) {
+            ctx
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit("deviceOrientationDidChange", params);
+          }
+        }
+
+        String orientationValue = getCurrentOrientation();
+        if (!lastOrientationValue.equals(orientationValue)) {
+          lastOrientationValue = orientationValue;
+
+          FLog.d(ReactConstants.TAG,"Orientation changed to " + orientationValue);
+
+          WritableMap params = Arguments.createMap();
+          params.putString("orientation", orientationValue);
+          if (ctx.hasActiveCatalystInstance()) {
+            ctx
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit("orientationDidChange", params);
+          }
+        }
+
+        return;
+      }
+    };
+
+    if (mOrientationListener.canDetectOrientation()) {
+      FLog.d(ReactConstants.TAG, "orientation detect enabled.");
+      mOrientationListener.enable();
+    } else {
+      FLog.d(ReactConstants.TAG, "orientation detect disabled.");
+      mOrientationListener.disable();
+    }
+
+    mReceiver = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+
+        String orientationValue = getCurrentOrientation();
+        lastOrientationValue = orientationValue;
+
+        FLog.d(ReactConstants.TAG,"Orientation changed to " + orientationValue);
+
+        WritableMap params = Arguments.createMap();
+        params.putString("orientation", orientationValue);
+        if (ctx.hasActiveCatalystInstance()) {
+          ctx
+              .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+              .emit("orientationDidChange", params);
+        }
+
+      }
+    };
+    OrientationActivityLifecycle.getInstance().registerListeners(this);
+  }
+
   @Override
   public String getName() {
     return "Orientation";
@@ -319,94 +408,5 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Ori
   @ReactMethod
   public void removeListeners(Integer count) {
     // Keep: Required for RN built in Event Emitter Calls.
-  }
-
-  private void createListenersIfNonExists() {
-    if (mOrientationListener != null) {
-      return;
-    }
-    
-    mOrientationListener = new OrientationEventListener(reactContext, SensorManager.SENSOR_DELAY_UI) {
-
-      @Override
-      public void onOrientationChanged(int orientation) {
-
-        FLog.d(ReactConstants.TAG,"DeviceOrientation changed to " + orientation);
-
-        String deviceOrientationValue = lastDeviceOrientationValue;
-
-
-        if (orientation == -1) {
-          deviceOrientationValue = "UNKNOWN";
-        } else if (orientation > 355 || orientation < 5) {
-          deviceOrientationValue = "PORTRAIT";
-        } else if (orientation > 85 && orientation < 95) {
-          deviceOrientationValue = "LANDSCAPE-RIGHT";
-        } else if (orientation > 175 && orientation < 185) {
-          deviceOrientationValue = "PORTRAIT-UPSIDEDOWN";
-        } else if (orientation > 265 && orientation < 275) {
-          deviceOrientationValue = "LANDSCAPE-LEFT";
-        }
-
-        if (!lastDeviceOrientationValue.equals(deviceOrientationValue)) {
-
-          lastDeviceOrientationValue = deviceOrientationValue;
-
-          WritableMap params = Arguments.createMap();
-          params.putString("deviceOrientation", deviceOrientationValue);
-          if (ctx.hasActiveCatalystInstance()) {
-            ctx
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit("deviceOrientationDidChange", params);
-          }
-        }
-
-        String orientationValue = getCurrentOrientation();
-        if (!lastOrientationValue.equals(orientationValue)) {
-          lastOrientationValue = orientationValue;
-
-          FLog.d(ReactConstants.TAG,"Orientation changed to " + orientationValue);
-
-          WritableMap params = Arguments.createMap();
-          params.putString("orientation", orientationValue);
-          if (ctx.hasActiveCatalystInstance()) {
-            ctx
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit("orientationDidChange", params);
-          }
-        }
-
-        return;
-      }
-    };
-
-    if (mOrientationListener.canDetectOrientation()) {
-      FLog.d(ReactConstants.TAG, "orientation detect enabled.");
-      mOrientationListener.enable();
-    } else {
-      FLog.d(ReactConstants.TAG, "orientation detect disabled.");
-      mOrientationListener.disable();
-    }
-
-    mReceiver = new BroadcastReceiver() {
-      @Override
-      public void onReceive(Context context, Intent intent) {
-
-        String orientationValue = getCurrentOrientation();
-        lastOrientationValue = orientationValue;
-
-        FLog.d(ReactConstants.TAG,"Orientation changed to " + orientationValue);
-
-        WritableMap params = Arguments.createMap();
-        params.putString("orientation", orientationValue);
-        if (ctx.hasActiveCatalystInstance()) {
-          ctx
-              .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-              .emit("orientationDidChange", params);
-        }
-
-      }
-    };
-    OrientationActivityLifecycle.getInstance().registerListeners(this);
   }
 }
