@@ -53,6 +53,10 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Ori
   }
 
   private void createListenersIfNonExists() {
+    if (mOrientationListener != null) {
+      return;
+    }
+    
     mOrientationListener = new OrientationEventListener(reactContext, SensorManager.SENSOR_DELAY_UI) {
 
       @Override
