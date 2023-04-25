@@ -43,7 +43,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Ori
 
   private @Nullable BroadcastReceiver mReceiver = null;
   private @Nullable OrientationEventListener mOrientationListener = null;
-  
+
   private boolean isLocked = false;
   private boolean isConfigurationChangeReceiverRegistered = false;
   private String lastOrientationValue = "";
@@ -59,7 +59,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Ori
       return;
     }
     
-    mOrientationListener = new OrientationEventListener(reactContext, SensorManager.SENSOR_DELAY_UI) {
+    mOrientationListener = new OrientationEventListener(ctx, SensorManager.SENSOR_DELAY_UI) {
 
       @Override
       public void onOrientationChanged(int orientation) {
